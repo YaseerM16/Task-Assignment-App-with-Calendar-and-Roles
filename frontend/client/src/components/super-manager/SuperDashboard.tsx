@@ -4,12 +4,12 @@ import { LayoutDashboard, Users, ClipboardList, Bell, UserCog, Settings, LogOut,
 // import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 // import { Button } from '@/components/ui/button';
 // import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import AssignManagerTool from './AssignManagerTool';
 import PromoteUserTool from './PromoteUserTool';
 import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import EmployeeManagement from './EmployeeManagement';
+import AssignManager from './AssignManager';
 
 export default function SuperManagerDashboard() {
     const [users, setUsers] = useState([
@@ -183,7 +183,7 @@ export default function SuperManagerDashboard() {
                                                 throw new Error('Function not implemented.');
                                             }}                                // ... pass necessary props
                                         />
-                                        <AssignManagerTool
+                                        {/* <AssignManagerTool
                                             users={users} assignmentData={{
                                                 employeeId: '',
                                                 managerId: ''
@@ -192,7 +192,7 @@ export default function SuperManagerDashboard() {
                                             }} handleAssignManager={function (): void {
                                                 throw new Error('Function not implemented.');
                                             }}                                // ... pass necessary props
-                                        />
+                                        /> */}
                                     </div>
                                 </TabsContent>
                             </Tabs>
@@ -202,7 +202,8 @@ export default function SuperManagerDashboard() {
                 {activePage === "employee" && <EmployeeManagement />}
 
                 {activePage === "manager" && (
-                    <h2 className="text-xl font-semibold">Manager Assignment Coming Soon</h2>
+                    // <h2 className="text-xl font-semibold">Manager Assignment Coming Soon</h2>
+                    <AssignManager />
                 )}
             </div>
         </div>

@@ -11,7 +11,7 @@ export class UserRepository implements IUserRepository {
             });
 
             return {
-                _id: user._id as string,
+                _id: user._id.toString(),
                 username: user.username,
                 email: user.email,
                 phone: user.phone,
@@ -36,7 +36,7 @@ export class UserRepository implements IUserRepository {
             if (!user) throw new Error("User not found");
 
             return {
-                _id: user._id as string,
+                _id: user._id.toString(),
                 username: user.username,
                 email: user.email,
                 phone: user.phone,
@@ -93,7 +93,7 @@ export class UserRepository implements IUserRepository {
                 .limit(parseInt(limit, 10));
 
             const formattedUsers: UserInstance[] = users.map((user) => ({
-                _id: user._id as string,
+                _id: user._id,
                 username: user.username,
                 email: user.email,
                 phone: user.phone,

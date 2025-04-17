@@ -1,30 +1,49 @@
 import React, { useEffect, useState } from "react";
-import { fetchAllEmployeesApi, promoteToManagerApi } from "@/service/superManagerApi";
+import { Plus, Edit, Trash2, UserCheck } from "lucide-react";
+import { fetchEmployeesApi, fetchManagersApi } from "@/service/superManagerApi";
 import Swal from "sweetalert2";
 import { Pagination } from "../Pagination";
 import { Employee, Manager } from "@/utils/roles.types";
 import { Table, TableColumn } from "../Table";
 import EmployeeDetailModal from "./EmployeeDetails";
+import ManagerAssignment from "./ManagerAssignment";
 import { Loader } from "../Loader";
 
-const EmployeeManagement = () => {
+const employees = [
+    {
+        id: 1,
+        name: "Asif Rahman",
+        email: "asif@example.com",
+        role: "Software Engineer",
+        manager: "John Doe",
+    },
+    {
+        id: 2,
+        name: "Sarah Khan",
+        email: "sarah@example.com",
+        role: "Product Manager",
+        manager: "Jane Smith",
+    },
+];
+
+
+
+const AssignManager = () => {
     const [tab, setTab] = React.useState("employees");
     const [loading, setLoading] = useState<boolean>(false)
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [totalPages, setTotalPages] = useState<number>(1);
     const employeesPerPage = 6
-    const [employees, setEmployees] = useState<Employee[] | []>([])
+    const [employees, setEmployees] = useState<Employee[] | null>([])
+    const [managers, setManagers] = useState<Manager[] | []>([])
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+    const [showManagerAssignment, setShowManagerAssignment] = useState(false);
 
-
-    const handleViewEmployee = (employee: Employee) => {
-        setSelectedEmployee(employee);
-    };
 
     const fetchEmployees = async (currentPage: number) => {
         try {
             setLoading(true);
-            const response = await fetchAllEmployeesApi({ page: currentPage, limit: employeesPerPage });
+            const response = await fetchEmployeesApi({ page: currentPage, limit: employeesPerPage });
             if (response?.status === 200) {
                 const { data } = response;
                 setEmployees(data.employees)
@@ -51,68 +70,63 @@ const EmployeeManagement = () => {
         }
     };
 
-    const handlePromotion = async () => {
-        if (!selectedEmployee) return;
-
+    const fetchManagers = async (currentPage: number) => {
         try {
             setLoading(true);
-            Swal.fire({
-                title: 'Are you sure?',
-                text: 'Do you want to Promote this Employee into Manager ?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Yes, proceed!',
-                cancelButtonText: 'No, cancel!',
-                toast: true,
-                position: 'top-end',
-                timer: 3000,
-                timerProgressBar: true,
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    const response = await promoteToManagerApi(selectedEmployee._id);
-                    if (response?.status === 200) {
-                        const { data } = response;
-                        console.log("Response data by Promote Emp (Backend) :", data.employee);
-                        setEmployees(employees?.map(employee => {
-                            return employee._id === data.employee ? data.employee : employee
-                        }))
-                        Swal.fire({
-                            icon: 'success',
-                            title: "Success",
-                            text: "Employee has been Promoted successfully ✅",
-                            toast: true,
-                            position: 'top-end',
-                            showConfirmButton: false,
-                            timer: 2000,
-                            timerProgressBar: true,
-                        });
-                        setSelectedEmployee(null)
-                    }
-                }
-            });
+            const response = await fetchManagersApi(undefined);
+            if (response?.status === 200) {
+                const { data } = response;
+                setManagers(data.managers)
+            }
         } catch (err) {
             Swal.fire({
                 position: "top-end",
                 icon: "error",
                 title: "Error!",
-                text: (err as Error)?.message || "Failed to assign manager",
-                showConfirmButton: false,
+                text: (err as Error)?.message || "Something went wrong. Please try again.",
+                showConfirmButton: true,
+                confirmButtonText: "OK",
                 timer: 3000,
                 toast: true,
             });
+        } finally {
+            setLoading(false)
         }
     };
 
     useEffect(() => {
         fetchEmployees(currentPage);
     }, [currentPage]);
+    useEffect(() => {
+        fetchManagers(currentPage);
+    }, []);
 
     const columns: TableColumn<Employee>[] = [
         { header: 'Name', accessor: 'username' },
         { header: 'Email', accessor: 'email' },
         { header: 'Phone', accessor: 'phone' },
         { header: 'Role', accessor: 'role' },
+        {
+            header: 'Actions',
+            actions: (employee) => (
+                <button
+                    onClick={() => onAssignManager(employee)}
+                    className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5 text-sm"
+                >
+                    <UserCheck className="w-3.5 h-3.5" />
+                    Assign Manager
+                </button>
+            )
+        }
     ];
+
+
+    function onAssignManager(employee: Employee) {
+        console.log("Employee from the onAssignManger click: :", employee);
+        setSelectedEmployee(employee)
+        setShowManagerAssignment(true)
+    }
+
 
 
     return (
@@ -142,10 +156,13 @@ const EmployeeManagement = () => {
                 <Table
                     data={employees || []}
                     columns={columns}
-                    onView={handleViewEmployee}
                 />
             )}
 
+            {/* <Table
+                data={employees || []}
+                columns={columns}
+            /> */}
 
             <Pagination
                 currentPage={currentPage}
@@ -164,18 +181,21 @@ const EmployeeManagement = () => {
                     </div>
                 </div>
             )}
-            {selectedEmployee && (
-                <>
-                    <EmployeeDetailModal
-                        employee={selectedEmployee}
-                        onClose={() => setSelectedEmployee(null)}
-                        onPromote={() => handlePromotion()}
-                    />
-                    {/* {loading ? <Spinner /> : ""} */}
-                </>
+            // Add this component to your return statement
+            {showManagerAssignment && selectedEmployee && (
+                <ManagerAssignment
+                    employee={selectedEmployee}
+                    onClose={() => setShowManagerAssignment(false)}
+                    onSuccess={() => {
+                        fetchEmployees(currentPage);
+                        console.log("<Manager> Assigned :")
+                    }
+                    } // Refresh the list
+                    managers={managers}
+                />
             )}
         </div>
     );
 };
 
-export default EmployeeManagement;
+export default AssignManager;

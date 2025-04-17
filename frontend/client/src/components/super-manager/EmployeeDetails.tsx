@@ -1,5 +1,6 @@
 // components/EmployeeDetailModal.tsx
 'use client';
+import { Employee } from '@/utils/roles.types';
 import {
     X,
     Mail,
@@ -13,26 +14,24 @@ import {
     Users
 } from 'lucide-react';
 
-type Employee = {
-    _id: string;
-    username: string;
-    email: string;
-    phone: string;
-    role: string;
-    department?: string;
-    joinDate?: string;
-};
+// type Employee = {
+//     _id: string;
+//     username: string;
+//     email: string;
+//     phone: string;
+//     role: string;
+//     department?: string;
+//     joinDate?: string;
+// };
 
 export default function EmployeeDetailModal({
     employee,
     onClose,
     onPromote,
-    onAssignManager,
 }: {
     employee: Employee;
     onClose: () => void;
     onPromote: () => void;
-    onAssignManager: () => void;
 }) {
     const getRoleBadge = () => {
         let badgeClass = "";
@@ -108,7 +107,7 @@ export default function EmployeeDetailModal({
                         </div>
                     </div>
 
-                    {employee.department && (
+                    {/* {employee.department && (
                         <div className="flex items-start gap-3">
                             <div className="p-2 bg-gray-100 rounded-lg">
                                 <ArrowUpDown className="w-5 h-5 text-gray-600" />
@@ -136,7 +135,7 @@ export default function EmployeeDetailModal({
                                 </p>
                             </div>
                         </div>
-                    )}
+                    )} */}
                 </div>
 
                 {/* Divider */}
@@ -149,13 +148,6 @@ export default function EmployeeDetailModal({
                         className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                         Close
-                    </button>
-                    <button
-                        onClick={onAssignManager}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                    >
-                        <UserCheck className="w-4 h-4" />
-                        Assign Manager
                     </button>
                     {employee.role !== 'supermanager' && (
                         <button

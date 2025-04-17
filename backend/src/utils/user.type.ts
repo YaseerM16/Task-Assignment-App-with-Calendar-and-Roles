@@ -1,3 +1,5 @@
+import { Types } from "mongoose";
+
 export type AddUserInput = {
     username: string;
     email: string;
@@ -46,7 +48,7 @@ export type AddUserOutput = {
 
 
 export type User = {
-    readonly _id: string;
+    readonly _id: Types.ObjectId; // ✅ make sure this is Types.ObjectId;
     readonly username: string;
     readonly email: string;
     readonly phone: string;

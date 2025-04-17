@@ -5,6 +5,7 @@ import { connectDB } from "./config/db.config"
 import { userRoutes } from './routes/user.routes';
 import cors from "cors"
 import cookieParser from "cookie-parser";
+import { superManagerRoute } from './routes/super.manager.routes';
 
 
 dotenv.config();
@@ -33,6 +34,7 @@ app.use(
 
 
 app.use("/user", userRoutes)
+app.use("/super-manager", superManagerRoute)
 
 
 app.listen(PORT, () => {
