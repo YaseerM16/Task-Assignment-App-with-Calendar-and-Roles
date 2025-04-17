@@ -2,13 +2,14 @@ import React, { useState } from "react";
 import { UserCheck, ChevronDown, X, Check } from "lucide-react";
 import Swal from "sweetalert2";
 // import { assignManagerApi } from "@/service/superManagerApi";
-import { Employee } from "@/utils/roles.types";
+import { Employee, Manager } from "@/utils/roles.types";
+import { assignManagerApi } from "@/service/superManagerApi";
 
 interface ManagerAssignmentProps {
     employee: Employee;
     onClose: () => void;
     onSuccess: () => void;
-    managers: Employee[];
+    managers: Manager[] | [];
 }
 
 const ManagerAssignment = ({
@@ -17,7 +18,7 @@ const ManagerAssignment = ({
     onSuccess,
     managers,
 }: ManagerAssignmentProps) => {
-    const [selectedManager, setSelectedManager] = useState<Employee | null>(null);
+    const [selectedManager, setSelectedManager] = useState<Manager | null>(null);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [loading, setLoading] = useState(false);
 
@@ -26,6 +27,9 @@ const ManagerAssignment = ({
 
         try {
             setLoading(true);
+            console.log("employee_ID: ", employee._id);
+            console.log("manager_ID: ", selectedManager._id);
+
             // const response = await assignManagerApi({
             //     employeeId: employee._id,
             //     managerId: selectedManager._id,
@@ -44,6 +48,38 @@ const ManagerAssignment = ({
             //     onSuccess();
             //     onClose();
             // }
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'Do you want to Assign this Manager to Employee ?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, proceed!',
+                cancelButtonText: 'No, cancel!',
+                toast: true,
+                position: 'top-end',
+                timer: 3000,
+                timerProgressBar: true,
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    const response = await assignManagerApi(employee._id, selectedManager._id);
+                    if (response?.status === 200) {
+                        const { data } = response;
+                        console.log("Response data by AssignManger (Backend) :", data);
+                        Swal.fire({
+                            icon: 'success',
+                            title: "Success",
+                            text: "Manager has been Assigned successfully ✅",
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 2000,
+                            timerProgressBar: true,
+                        });
+                        onSuccess();
+                        onClose();
+                    }
+                }
+            });
         } catch (err) {
             Swal.fire({
                 position: "top-end",
@@ -54,14 +90,12 @@ const ManagerAssignment = ({
                 timer: 3000,
                 toast: true,
             });
-        } finally {
-            setLoading(false);
         }
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+            <div className="bg-gray-900 text-white rounded-lg shadow-2xl w-full max-w-md border border-gray-700">
                 {/* Header */}
                 <div className="flex justify-between items-center p-4 border-b">
                     <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -126,7 +160,7 @@ const ManagerAssignment = ({
                                                 </span>
                                             </div>
                                             <div>
-                                                <p className="font-medium">{manager.username}</p>
+                                                <p className="font-medium text-black">{manager.username}</p>
                                                 <p className="text-xs text-gray-500">{manager.role}</p>
                                             </div>
                                         </div>

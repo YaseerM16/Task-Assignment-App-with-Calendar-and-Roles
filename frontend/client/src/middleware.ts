@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// 1. Define ALL protected routes and their required roles
+// ... your PROTECTED_ROUTES and PUBLIC_ROUTES remain the same
 const PROTECTED_ROUTES = {
     //Employee routes
     "/employee/dashboard": ['employee'],
@@ -37,45 +37,49 @@ const PUBLIC_ROUTES = [
     '/favicon.ico',          // Favicon
     '/api/public/'           // Public APIs
 ];
+
 const roleRedirectMap: Record<string, string> = {
     employee: '/employee/dashboard',
     manager: '/manager/dashboard',
     supermanager: '/super-manager/dashboard',
 };
 
-
 export function middleware(request: NextRequest) {
     const currentPath = request.nextUrl.pathname;
     const token = request.cookies.get('accessToken')?.value;
 
-    // 3. First check - is this a public route?
-    // if (PUBLIC_ROUTES.includes(currentPath) && token) {
-    //     return NextResponse.next();
-    // }
+    console.log("Current Path: ", currentPath);
 
-    // 4. Second check - is there NO token for a protected route?
+
+    // ✅ 1. If public route, allow it even without token
+    if (isPublicRoute(currentPath)) {
+        return NextResponse.next();
+    }
+
+
+    // ✅ 2. If token missing for protected route
     if (!token) {
-        console.log("TOk wasn't there: :", token);
+        console.log("Token wasn't there for:", currentPath);
         return handleMissingToken(request, currentPath);
     }
 
-    // 5. Third check - verify token and permissions
+    // ✅ 3. Decode token and handle permissions
     try {
         const decoded = decodeJWT(token);
         const userRole = decoded.role;
-        const redirectPath = roleRedirectMap[userRole] || '/dashboard';
 
-        if (PUBLIC_ROUTES.includes(currentPath) && token) {
+        // ✅ Redirect logged-in user from public routes (like /user/login) to dashboard
+        if (isPublicRoute(currentPath)) {
+            const redirectPath = roleRedirectMap[userRole] || '/dashboard';
             return NextResponse.redirect(new URL(redirectPath, request.url));
         }
 
-        // 6. Check if user has permission for this route
+        // ✅ Check if the user has permission for the current route
         if (!hasPermission(currentPath, userRole)) {
             return redirectToUnauthorized(request);
         }
 
-
-        // 7. Add user info to headers for backend use
+        // ✅ Optionally forward user info to backend via headers
         const headers = new Headers(request.headers);
         headers.set('x-user-id', decoded.id);
         headers.set('x-user-role', userRole);
@@ -89,7 +93,7 @@ export function middleware(request: NextRequest) {
 }
 
 // ======================
-// HELPER FUNCTIONS
+// Helper functions
 // ======================
 
 function isPublicRoute(path: string): boolean {
@@ -99,22 +103,11 @@ function isPublicRoute(path: string): boolean {
 }
 
 function handleMissingToken(request: NextRequest, currentPath: string): NextResponse {
-    // Special case: API routes should return 401 instead of redirect
-    // if (currentPath.startsWith('/api/')) {
-    //     return new NextResponse(
-    //         JSON.stringify({ error: 'Authentication required' }),
-    //         { status: 401, headers: { 'content-type': 'application/json' } }
-    //     );
-    // }
-
-    // For pages, redirect to login with return URL
     const loginUrl = new URL('/user/login', request.url);
-    // loginUrl.searchParams.set('redirect', currentPath);
     return NextResponse.redirect(loginUrl);
 }
 
 function handleInvalidToken(request: NextRequest): NextResponse {
-    // Clear invalid token
     const response = NextResponse.redirect(new URL('/user/login', request.url));
     response.cookies.delete('accessToken');
     return response;
@@ -126,12 +119,10 @@ function decodeJWT(token: string): { id: string; role: string } {
 }
 
 function hasPermission(path: string, userRole: string): boolean {
-    // Find the most specific matching route
     const matchedRoute = Object.entries(PROTECTED_ROUTES)
-        .sort((a, b) => b[0].length - a[0].length) // Sort by longest path first
+        .sort((a, b) => b[0].length - a[0].length)
         .find(([route]) => path.startsWith(route));
 
-    // If no matched route, deny access by default
     if (!matchedRoute) return false;
 
     const [, allowedRoles] = matchedRoute;
@@ -142,9 +133,6 @@ function redirectToUnauthorized(request: NextRequest): NextResponse {
     return NextResponse.redirect(new URL('/unauthorized', request.url));
 }
 
-// Middleware configuration
 export const config = {
-    matcher: [
-        '/((?!_next/static|_next/image|favicon.ico).*)',
-    ],
+    matcher: ["/((?!_next|favicon.ico).*)"],
 };

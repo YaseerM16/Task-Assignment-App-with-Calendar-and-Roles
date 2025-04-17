@@ -2,6 +2,7 @@ import { Schema, model, Document, Types } from 'mongoose';
 import { userValidators } from "./User.Validator"
 
 interface IUser extends Document {
+    _id: Types.ObjectId;
     username: string;
     email: string;
     phone: string;
@@ -10,6 +11,7 @@ interface IUser extends Document {
     createdAt: Date,
     updatedAt: Date,
     managerId?: Types.ObjectId | IUser;
+    employees?: Types.ObjectId[] | IUser[];
 }
 
 const UserSchema = new Schema<IUser>({
@@ -66,6 +68,13 @@ const UserSchema = new Schema<IUser>({
         ref: 'User',
         default: null,
     },
+    employees: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
+            default: [],
+        },
+    ],
 }, {
     timestamps: true,
 });
