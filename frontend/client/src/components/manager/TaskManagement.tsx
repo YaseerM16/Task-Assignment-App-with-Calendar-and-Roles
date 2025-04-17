@@ -3,8 +3,9 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { Plus, Eye, Calendar as CalendarIcon, X } from 'lucide-react';
 // import { Table } from './Table';
-import { Task, TaskStatus, TaskPriority } from '@/utils/task.types';
+import { Task, TaskStatus, TaskPriority, TaskFormData } from '@/utils/task.types';
 import { Table, TableColumn } from '../Table';
+import { useForm } from 'react-hook-form';
 
 type ValuePiece = Date | null;
 type CalendarValue = ValuePiece | [ValuePiece, ValuePiece];
@@ -105,6 +106,32 @@ export function TaskManagement() {
         }
     ];
 
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+        reset,
+        watch,
+        setValue,
+    } = useForm<TaskFormData>({
+        defaultValues: {
+            title: '',
+            description: '',
+            dueDate: new Date(),
+            priority: 'MEDIUM',
+            status: 'PENDING',
+        },
+        mode: 'onChange',
+    });
+
+    const onSubmit = (data: TaskFormData) => {
+        console.log("TAsk submitted :", data);
+
+        handleCreateTask();
+        reset();
+    };
+
+
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
             <div className="flex justify-between items-center mb-6">
@@ -181,88 +208,153 @@ export function TaskManagement() {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
                         <div className="flex justify-between items-center border-b p-4">
-                            <h3 className="text-lg font-semibold">Create New Task</h3>
+                            <h3 className="text-lg font-semibold text-black">Create New Task {date && !Array.isArray(date) ? date.toLocaleDateString() : ''}</h3>
                             <button
-                                onClick={() => setShowCreateModal(false)}
+                                onClick={() => {
+                                    setShowCreateModal(false);
+                                    reset();
+                                }}
                                 className="text-gray-500 hover:text-gray-700"
                             >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
-                        <div className="p-4 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                                <input
-                                    type="text"
-                                    value={newTask.title}
-                                    onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Task title"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                                <textarea
-                                    value={newTask.description}
-                                    onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Task description"
-                                    rows={3}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
-                                <input
-                                    type="date"
-                                    value={newTask.dueDate ? new Date(newTask.dueDate).toISOString().split('T')[0] : ''}
-                                    onChange={(e) => setNewTask({ ...newTask, dueDate: new Date(e.target.value) })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
+
+                        <form onSubmit={handleSubmit(onSubmit)}>
+                            <div className="p-4 space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                                    <select
-                                        value={newTask.priority}
-                                        onChange={(e) => setNewTask({ ...newTask, priority: e.target.value as TaskPriority })}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    >
-                                        <option value="LOW">Low</option>
-                                        <option value="MEDIUM">Medium</option>
-                                        <option value="HIGH">High</option>
-                                    </select>
+                                    <label className="block text-sm font-medium text-gray-800 mb-1">
+                                        Title <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        {...register('title', {
+                                            required: 'Title is required',
+                                            maxLength: {
+                                                value: 100,
+                                                message: 'Title must be less than 100 characters'
+                                            }
+                                        })}
+                                        className={`w-full px-3 py-2 border ${errors.title ? 'border-red-500' : 'border-gray-300'
+                                            } text-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                        placeholder="Task title"
+                                    />
+                                    {errors.title && (
+                                        <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+                                    )}
                                 </div>
+
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                                    <select
-                                        value={newTask.status}
-                                        onChange={(e) => setNewTask({ ...newTask, status: e.target.value as TaskStatus })}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    >
-                                        <option value="PENDING">Pending</option>
-                                        <option value="IN_PROGRESS">In Progress</option>
-                                        <option value="COMPLETED">Completed</option>
-                                    </select>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Description
+                                    </label>
+                                    <textarea
+                                        {...register('description', {
+                                            maxLength: {
+                                                value: 500,
+                                                message: 'Description must be less than 500 characters'
+                                            }
+                                        })}
+                                        className={`w-full px-3 py-2 border ${errors.description ? 'border-red-500' : 'border-gray-300'
+                                            } text-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                        placeholder="Task description"
+                                        rows={3}
+                                    />
+                                    {errors.description && (
+                                        <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Due Date <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="date"
+                                        {...register('dueDate', {
+                                            required: 'Due date is required',
+                                            valueAsDate: true,
+                                            validate: (value) =>
+                                                value >= new Date(new Date().setHours(0, 0, 0, 0)) ||
+                                                'Due date must be today or in the future'
+                                        })}
+                                        min={new Date().toISOString().split('T')[0]}
+                                        className={`w-full px-3 py-2 border ${errors.dueDate ? 'border-red-500' : 'border-gray-300'
+                                            } text-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                    />
+                                    {errors.dueDate && (
+                                        <p className="mt-1 text-sm text-red-600">{errors.dueDate.message}</p>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Priority <span className="text-red-500">*</span>
+                                        </label>
+                                        <select
+                                            {...register('priority', {
+                                                required: 'Priority is required',
+                                                validate: (value) => value !== undefined || 'Please select a priority'
+                                            })}
+                                            className={`w-full px-3 py-2 border ${errors.priority ? 'border-red-500' : 'border-gray-300'
+                                                } text-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                            defaultValue="" // Set default to empty
+                                        >
+                                            <option value="" disabled hidden>
+                                                Select priority
+                                            </option>
+                                            <option value="LOW">Low</option>
+                                            <option value="MEDIUM">Medium</option>
+                                            <option value="HIGH">High</option>
+                                        </select>
+                                        {errors.priority && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.priority.message}</p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Status <span className="text-red-500">*</span>
+                                        </label>
+                                        <select
+                                            {...register('status', { required: 'Status is required' })}
+                                            className={`w-full px-3 py-2 border ${errors.status ? 'border-red-500' : 'border-gray-300'
+                                                } text-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                        >
+                                            <option value="PENDING">Pending</option>
+                                            <option value="IN_PROGRESS">In Progress</option>
+                                        </select>
+                                        {errors.status && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.status.message}</p>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div className="flex justify-end space-x-3 p-4 border-t">
-                            <button
-                                onClick={() => setShowCreateModal(false)}
-                                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleCreateTask}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                            >
-                                Create Task
-                            </button>
-                        </div>
+
+                            <div className="flex justify-end space-x-3 p-4 border-t">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowCreateModal(false);
+                                        reset();
+                                    }}
+                                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                >
+                                    Create Task
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
-            )}
+            )
+            };
+
         </div>
     );
 }
