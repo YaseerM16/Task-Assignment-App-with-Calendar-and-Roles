@@ -1,45 +1,67 @@
 'use client';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
-import { User, Mail, Lock, Check, AlertCircle } from 'lucide-react';
+import { User, Mail, Lock, Check, AlertCircle, Phone } from 'lucide-react';
+import { signupApi } from '@/service/userApi';
+import { RegisterUser } from '@/utils/user.types';
+import Swal from 'sweetalert2';
+import { useAppDispatch } from '@/store/hooks';
+import { setUser } from '@/store/slices/UserSlice';
+import { useState } from 'react';
+import Spinner from '@/components/Spinner';
 
 export default function EmployeeRegistrationForm() {
     const router = useRouter();
+    const dispatch = useAppDispatch();
+    const [loading, setLoading] = useState<boolean>(false)
+
     const {
         register,
         handleSubmit,
         formState: { errors },
         watch,
-    } = useForm({
+    } = useForm<RegisterUser>({
         defaultValues: {
-            name: '',
+            username: '',
             email: '',
             password: '',
             confirmPassword: ''
         }
     });
 
-    const onSubmit = async (data: any) => {
+    const onSubmit = async (data: RegisterUser) => {
         try {
-            console.log("credentials: ", data);
-
-            // const response = await fetch('/api/register', {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //     },
-            //     body: JSON.stringify({
-            //         name: data.name,
-            //         email: data.email,
-            //         password: data.password,
-            //         role: 'Employee'
-            //     }),
-            // });
-
-            // if (!response.ok) throw new Error('Registration failed');
-            // router.push('/dashboard');
+            setLoading(true)
+            const response = await signupApi(data)
+            if (response?.status === 201) {
+                const { data } = response
+                console.log("User register Data (Backend):", data);
+                // dispatch(setUser(data))
+                // localStorage.setItem("user", data)
+                setLoading(false)
+                Swal.fire({
+                    position: "top-end",
+                    icon: "success",
+                    title: "Success!",
+                    text: "Registered successfully ..! Login with your Credentials",
+                    showConfirmButton: false,
+                    timer: 3000,
+                    toast: true,
+                }).then(() => {
+                    router.replace("/user/login");
+                });
+            }
         } catch (error) {
-            alert('Registration failed. Please try again.');
+            console.log("Error of Api (backend):", error);
+            Swal.fire({
+                position: "top-end",
+                icon: "error",
+                title: "Error!",
+                text: (error as Error)?.message || "Something went wrong. Please try again.",
+                showConfirmButton: true,
+                confirmButtonText: "OK",
+                toast: true,
+            });
         }
     };
 
@@ -63,7 +85,7 @@ export default function EmployeeRegistrationForm() {
                         </label>
                         <div className="relative">
                             <input
-                                {...register('name', {
+                                {...register('username', {
                                     required: 'Name is required',
                                     minLength: {
                                         value: 3,
@@ -71,16 +93,16 @@ export default function EmployeeRegistrationForm() {
                                     }
                                 })}
                                 type="text"
-                                className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${errors.name ? 'border-red-500' : 'border-gray-300'
+                                className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${errors.username ? 'border-red-500' : 'border-gray-300'
                                     }`}
                                 placeholder="John Doe"
                             />
                             <User className="absolute left-3 top-2.5 text-gray-500" />
                         </div>
-                        {errors.name && (
+                        {errors.username && (
                             <p className="text-sm text-red-600 flex items-start gap-1 mt-1">
                                 <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                                {errors.name.message}
+                                {errors.username.message}
                             </p>
                         )}
                     </div>
@@ -114,6 +136,57 @@ export default function EmployeeRegistrationForm() {
                             </p>
                         )}
                     </div>
+                    {/* Phone */}
+                    <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                            <Phone className="w-4 h-4" />
+                            Mobile Number
+                        </label>
+                        <div className="relative">
+                            <input
+                                {...register('phone', {
+                                    required: 'Mobile number is required',
+                                    pattern: {
+                                        value: /^\d{10}$/,
+                                        message: 'Invalid phone number (10 digits required)'
+                                    }
+                                })}
+                                type="tel"
+                                className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${errors.phone ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                placeholder="8998467859"
+                            />
+                            <Phone className="absolute left-3 top-2.5 text-gray-500" />
+                        </div>
+                        {errors.phone && (
+                            <p className="text-sm text-red-600 flex items-start gap-1 mt-1">
+                                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                                {errors.phone.message}
+                            </p>
+                        )}
+                    </div>
+                    {/* Role Field - Non-editable */}
+                    <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                            <User className="w-4 h-4" />
+                            Role
+                        </label>
+                        <div className="relative">
+                            <input
+                                {...register('role')}
+                                type="text"
+                                value="employee"
+                                readOnly
+                                className="w-full pl-10 pr-4 py-2 border rounded-lg bg-gray-100 text-gray-600 border-gray-300 cursor-not-allowed"
+                                placeholder="Role"
+                            />
+                            <Lock className="absolute left-3 top-2.5 text-gray-500" />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                            Your role is automatically assigned as Employee
+                        </p>
+                    </div>
+
 
                     {/* Password Field */}
                     <div className="space-y-2">
@@ -128,6 +201,13 @@ export default function EmployeeRegistrationForm() {
                                     minLength: {
                                         value: 8,
                                         message: 'Minimum 8 characters'
+                                    },
+                                    validate: {
+                                        noSpaces: (value) =>
+                                            /^\S+$/.test(value) || 'Password cannot contain spaces',
+                                        strongPattern: (value) =>
+                                            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{6,}$/.test(value) ||
+                                            'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
                                     }
                                 })}
                                 type="password"
@@ -172,20 +252,20 @@ export default function EmployeeRegistrationForm() {
                             </p>
                         )}
                     </div>
-
-                    <button
+                    {loading ? <Spinner /> : <button
                         type="submit"
                         className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-lg font-medium transition duration-200 flex items-center justify-center gap-2 mt-2"
                     >
                         <User className="w-5 h-5" />
                         Register Now
-                    </button>
+                    </button>}
+
                 </form>
 
                 <div className="px-6 py-4 bg-gray-50 text-center border-t">
                     <p className="text-sm text-gray-600">
                         Already have an account?{' '}
-                        <a href="/login" className="text-indigo-600 hover:underline font-medium">
+                        <a href="/user/login" className="text-indigo-600 hover:underline font-medium">
                             Sign in
                         </a>
                     </p>

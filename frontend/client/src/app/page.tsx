@@ -9,11 +9,11 @@ export default function Home() {
         <div className="flex items-center justify-between">
           <div className="text-2xl font-bold text-indigo-600">TaskFlow</div>
           <div className="flex space-x-4">
-            <Link href="/login" className="px-4 py-2 text-indigo-600 hover:text-indigo-800 transition">
+            <Link href="/user/login" className="px-4 py-2 text-indigo-600 hover:text-indigo-800 transition">
               Sign In
             </Link>
             <Link
-              href="/register"
+              href="/user/register"
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-md"
             >
               Get Started
